@@ -1,11 +1,13 @@
 ﻿using SimpleWifi.Win32.Interop;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
+using System.Xml.Serialization;
 
 namespace SimpleWifi.Win32
 {
@@ -539,6 +541,40 @@ namespace SimpleWifi.Win32
 			finally
 			{
 				WlanInterop.WlanFreeMemory(profileXmlPtr);
+			}
+		}
+
+		/// <summary>
+		/// Gets the profile's XML specification. Request Key unencrypted in plaintext.
+		/// </summary>
+		/// <param name="profileName">The name of the profile.</param>
+		/// <returns>The XML document.</returns>
+		public string GetProfileXmlUnencrypted(string profileName)
+		{
+			IntPtr profileXmlPtr;
+			WlanProfileFlags flags = WlanProfileFlags.GetPlaintextKey;// | WlanProfileFlags.User;
+			WlanAccess access = WlanAccess.ReadAccess;
+
+			WlanInterop.ThrowIfError(WlanInterop.WlanGetProfile(client.clientHandle, info.interfaceGuid, profileName, IntPtr.Zero, out profileXmlPtr, out flags, out access));
+			try
+			{
+				return Marshal.PtrToStringUni(profileXmlPtr);
+			}
+			finally
+			{
+				WlanInterop.WlanFreeMemory(profileXmlPtr);
+			}
+		}
+
+		public WLANProfile GetProfile(string profileName, bool decrypted)
+		{
+			string xml = decrypted ? GetProfileXmlUnencrypted(profileName) : GetProfileXml(profileName);
+
+			var serializer = new XmlSerializer(typeof(WLANProfile));
+			var buffer = Encoding.UTF8.GetBytes(xml);
+			using (var stream = new MemoryStream(buffer))
+			{
+				return (WLANProfile)serializer.Deserialize(stream);
 			}
 		}
 

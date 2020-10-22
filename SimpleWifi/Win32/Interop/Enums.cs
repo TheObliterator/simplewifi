@@ -142,7 +142,8 @@ namespace SimpleWifi.Win32.Interop
 		/// </remarks>
 		AllUser = 0,
 		GroupPolicy = 1,
-		User = 2
+		User = 2,
+		GetPlaintextKey = 4
 	}
 	
 	/// <summary>
